@@ -1,14 +1,14 @@
 'use strict';
 var express = require('express');
 var app = express();
-var NucoachApi=require('nucoach-api');
+var NucoachApi=require('./nucoach-api');
 
 
 var api=new NucoachApi('your hook id','your hook secret');
 
 
 app.get('/',function(req,res){
-    res.sendFile(${__dirname}+'/index.html');
+    res.sendFile(__dirname+'/index.html');
 });
 
 app.post('/misift',function(req,res){
