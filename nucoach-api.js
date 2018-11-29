@@ -1,56 +1,68 @@
-var request = require('request');
+const request = require('request');
+const baseUrl = require('./config').baseUrl;
 
 
-var NucoachApi = function (hookId, hookSecret) {
+const NucoachApi = function (hookId, hookSecret) {
 
     if (!hookId || !hookSecret) {
         throw new Error('HookId or Hook secret is missing');
         return false;
     }
 
-    var _hookId = hookId;
-    var _hookSecret = hookSecret;
+    const _hookId = hookId;
+    const _hookSecret = hookSecret;
 
-    var _request = function (settings, suc, err) {
+
+    /**
+     * Abstract request fn.
+     * @param settings
+     * @return {Promise<any>}
+     * @private
+     */
+    const _request = (settings) => new Promise((resolve, reject) => {
+
+        settings.headers = {
+            'deephealth-hook-secret': _hookSecret,
+            'deephealth-hook-id': _hookId,
+            'content-type': 'application/json'
+        };
+        settings.json = true;
+
         request(settings, function (error, response, body) {
             if (error) {
-                err(error);
+                reject(error);
             } else {
-                suc(body);
+                resolve(body);
             }
         })
-    };
+    });
+
+
+    /**
+     * to test NUCoach hook api.
+     * @return {Promise<any>}
+     */
+    this.test = () => _request({
+        method: 'GET',
+        url: baseUrl + 'test'
+    });
 
     /**
      * Post object to User model
-     * @param obj the object to be saved
-     * @param tags array of strings and numbers to tag data object.
-     * @param suc success callback
-     * @param err error callback
+     * @param userId
+     * @param obj
+     * @param tags
+     * @return {Promise<any>}
      */
-    this.postModel = function (userId, obj, tags, suc, err) {
-
-        var obj = obj || {};
-        var tags = tags || ['module'];
-
-        _request({
-            method: 'POST',
-            url: 'https://deephealthlab.org/hook/model/' + userId,
-            headers:
-                {
-                    'deephealth-hook-secret': _hookSecret,
-                    'deephealth-hook-id': _hookId,
-                    'content-type': 'application/json'
-                },
-            body:
-                {
-                    tags: tags,
-                    data: obj
-                },
-            json: true
-
-        }, suc, err);
-    };
+    this.postModel = (userId, obj = {}, tags = ['module']) => _request({
+        method: 'POST',
+        url: baseUrl + 'model/' + userId,
+        body:
+            {
+                tags: tags,
+                data: obj
+            }
+    });
 
 
     /**
@@ -58,148 +70,78 @@ var NucoachApi = function (hookId, hookSecret) {
      * @param userId the NUCoach ID of the user
      * @param optTags optional tags to search.
      * @param optLimit default 10, can be set to 1000
-     * @param suc success callback
-     * @param err error callback
+     * @return {Promise<any>}
      */
-    this.getModel = function (userId, optTags, optLimit, suc, err) {
-        _request({
-            method: 'GET',
-            url: 'https://deephealthlab.org/hook/model/' + userId,
-            qs: optTags ? {limit: optLimit || 10, tags: optTags} : {limit: optLimit || 10},
-            headers:
-                {
-                    'deephealth-hook-secret': _hookSecret,
-                    'deephealth-hook-id': _hookId,
-                    'content-type': 'application/json'
-                },
-            json: true
-        }, suc, err);
-    };
+    this.getModel = (userId, optTags, optLimit) => _request({
+        method: 'GET',
+        url: baseUrl + 'model/' + userId,
+        qs: optTags ? {limit: optLimit || 10, tags: optTags} : {limit: optLimit || 10}
+    });
 
-
-    /**
-     * to test NUCoach hook api.
-     * @param suc
-     * @param err
-     */
-    this.test = function (suc, err) {
-
-        _request({
-            method: 'GET',
-            url: 'https://deephealthlab.org/hook/test',
-            headers:
-                {
-                    'deephealth-hook-secret': _hookSecret,
-                    'deephealth-hook-id': _hookId,
-                    'content-type': 'application/json'
-                },
-            json: true
-        }, suc, err);
-    };
 
     /**
      * Create a notification for a client
-     * @param userId NUCoach user ID.
-     * @param title Notification title.
-     * @param message Notification body (message).
+     * @param userId
+     * @param title
+     * @param message
+     * @return {Promise<any>}
      */
-    this.createNotification = function (userId, title, message, suc, err) {
-
-        _request({
-            method: 'POST',
-            url: 'https://deephealthlab.org/hook/notification/' + userId,
-            headers:
-                {
-                    'deephealth-hook-secret': _hookSecret,
-                    'deephealth-hook-id': _hookId,
-                    'content-type': 'application/json'
-                },
-            body:
-                {
-                    notificationTitle: title,
-                    notificationMessage: message
-                },
-            json: true
-        }, suc, err);
-
-    };
+    this.createNotification = (
+        userId,
+        title = 'NUCoach',
+        message = 'Empty Message'
+    ) => _request({
+        method: 'POST',
+        url: baseUrl + 'notification/' + userId,
+        body:
+            {
+                notificationTitle: title,
+                notificationMessage: message
+            }
+    });
 
 
     /**
      * Schedule a notification in the future.
      * @param userId
-     * @param title
-     * @param message
+     * @param notificationTitle
+     * @param notificationMessage
      * @param time
-     * @param suc
-     * @param err
+     * @return {Promise<any>}
      */
-    this.createScheduledNotification = function (userId, title, message, time, suc, err) {
+    this.createScheduledNotification = (
+        userId,
+        notificationTitle = 'NUCoach',
+        notificationMessage = 'Empty Notification',
+        time = Date.now() + 180000
+    ) => _request({
+        method: 'POST',
+        url: baseUrl + 'scheduled-notification/' + userId,
+        body: {notificationTitle, notificationMessage, time}
 
-
-        _request({
-            method: 'POST',
-            url: 'https://deephealthlab.org/hook/scheduled-notification/' + userId,
-            headers:
-                {
-                    'deephealth-hook-secret': _hookSecret,
-                    'deephealth-hook-id': _hookId,
-                    'content-type': 'application/json'
-                },
-            body:
-                {
-                    notificationTitle: title,
-                    notificationMessage: message,
-                    time: time || Date.now() + 180000
-                },
-            json: true
-        }, suc, err);
-
-
-    };
+    });
 
 
     /**
-     * create instant activity for clients. (using own module)
+     * Create instant activity for clients. (using own module)
      * @param userId
      * @param title
-     * @param notTitle
-     * @param notMessage
-     * @param optModuleId
-     * @param suc
-     * @param err
+     * @param notificationTitle
+     * @param notificationMessage
+     * @param module
+     * @return {Promise<any>}
      */
-    this.createActivity = function (userId, title, notTitle, notMessage,optModuleId, suc, err) {
-
-
-        _request({
-            method: 'POST',
-            url: 'https://deephealthlab.org/hook/activity/' + userId,
-            headers:
-                {
-                    'deephealth-hook-secret': _hookSecret,
-                    'deephealth-hook-id': _hookId,
-                    'content-type': 'application/json'
-                },
-            body:
-                {
-                    input: {},
-                    title: title,
-                    notificationTitle: notTitle,
-                    notificationMessage: notMessage,
-                    module:optModuleId || null
-                },
-            json: true
-        }, suc, err);
-    };
-
-
-
-
-
-
-
-
+    this.createActivity = (
+        userId,
+        title = 'No Title',
+        notificationTitle = 'NUCoach',
+        notificationMessage = 'Empty Message',
+        module = null
+    ) => _request({
+        method: 'POST',
+        url: baseUrl + 'activity/' + userId,
+        body: {input: {}, title, notificationTitle, notificationMessage, module},
+    });
 };
 
 

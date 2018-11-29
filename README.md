@@ -1,6 +1,6 @@
 # Running Express apps in AWS Lambda
 
-This is a simple example that shows how to deploy an existing [Express](http://expressjs.com/) application, with minimal changes, to AWS Lambda.
+This is a simple example that shows how to deploy an existing [Express](http://expressjs.com/) application for NUCoach modules, with minimal changes, to AWS Lambda.
 
 ## Running the example
 
