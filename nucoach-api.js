@@ -142,6 +142,25 @@ const NucoachApi = function (hookId, hookSecret) {
         url: baseUrl + 'activity/' + userId,
         body: {input: {}, title, notificationTitle, notificationMessage, module},
     });
+
+
+    this.getConfig=()=>_request({
+        method: 'GET',
+        url: baseUrl + 'config'
+    });
+
+    this.updateConfig=(config)=>_request({
+        method: 'PUT',
+        url: baseUrl + 'config',
+        body:config
+    });
+
+    this.getActionPlans=()=>_request({
+        method: 'GET',
+        url: baseUrl + 'action-plans'
+    });
+
+
 };
 
 
